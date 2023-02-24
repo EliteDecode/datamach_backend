@@ -4,13 +4,34 @@ const asyncHandler = require("express-async-handler");
 const Register = require("../models/register_models");
 const sendMail = require("../utils/email_utils");
 
-const getUsers = (req, res) => {
-  res.json({ message: "we are live to begin" });
-};
+const getUsers = asyncHandler(async (req, res) => {
+  const data = await Register.find();
+
+  if (data) {
+    res.status(200);
+    res.json(data);
+  } else {
+    res.status(500);
+    throw new Error("Something went wrong");
+  }
+});
+
+const getUsersEmail = asyncHandler(async (req, res) => {
+  const Email = req.params.Email;
+  const data = await Register.find({ Email });
+
+  if (data) {
+    res.status(200);
+    res.json(data);
+  } else {
+    res.status(500);
+    throw new Error("Something went wrong");
+  }
+});
 
 const postUsers = asyncHandler(async (req, res) => {
-  const profile = req.files.profile[0].path;
-  const natid = req.files.natid[0].path;
+  const profile = req.files.profile[0].filename;
+  const natid = req.files.natid[0].filename;
 
   const { Firstname, Lastname, Address, University, GPA, Email, Phone } =
     req.body;
@@ -26,6 +47,13 @@ const postUsers = asyncHandler(async (req, res) => {
   ) {
     res.status(400);
     throw new Error("All fields must be provided");
+  }
+
+  const userExists = await Register.findOne({ Email });
+
+  if (userExists) {
+    res.status(400);
+    throw new Error("User with this Email has registered for this programme");
   } else {
     const upload = await Register.create({
       Firstname,
@@ -35,8 +63,8 @@ const postUsers = asyncHandler(async (req, res) => {
       GPA,
       Email,
       Phone,
-      ID: req.files.natid[0].path,
-      Profile: req.files.profile[0].path,
+      ID: req.files.natid[0].filename,
+      Profile: req.files.profile[0].filename,
     });
 
     if (upload) {
@@ -47,7 +75,9 @@ const postUsers = asyncHandler(async (req, res) => {
       )
         .then(() => {
           res.status(200);
-          res.json({ message: "Registration email sent successfully" });
+          res.json({
+            message: "success",
+          });
         })
         .catch((error) => {
           res.status(400);
@@ -63,4 +93,5 @@ const postUsers = asyncHandler(async (req, res) => {
 module.exports = {
   getUsers,
   postUsers,
+  getUsersEmail,
 };

@@ -10,4 +10,5 @@ routes.post(
   RegisterController.postUsers
 );
 
+routes.get("/:Email", RegisterController.getUsersEmail);
 module.exports = routes;
